@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 #include "DBF.h"
 
 const char* CONTOUR="contour";
@@ -37,14 +38,13 @@ int main()
     elefield = -1;
     for(i=0;i<header->field_count;++i){
         p=header->fields+i;
-        if(!strncasecmp(p->name,"ELE")){
+        if(!strncasecmp(p->name,"ELE",3)){
             elefield=i;
             break;
         }
     }
     DBF_HEADER_t * destHeader =
         newHeader(elefield==-1?header->field_count:header->field_count+2);
-
 
     if(print_log){
         for(i=0;i<header->field_count;++i){
