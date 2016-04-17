@@ -61,6 +61,9 @@ void freeRow(char** row, DBF_HEADER_t *header){
     free(row);
 }
 
+/**
+* must free return value
+*/
 DBF_HEADER_t * newHeader(int field_count){
     DBF_HEADER_t * header = (DBF_HEADER_t *)
         calloc(1, sizeof(int)+SIZEOFHEADER(field_count));
