@@ -9,7 +9,7 @@
 #include "DBF.h"
 
 const char* CONTOUR="contour";
-const char* CONTOUR_EXT="contour_ext";
+const char* CONTOUR_EXT="contour_ex";
 const char* ELEVATION="elevation";
 const char* ELEVATION_MAJOR="elevation_major";
 const char* ELEVATION_MEDIUM="elevation_medium";
@@ -28,6 +28,7 @@ int main()
     float field_float;
     int field_int;
     int elefield,ele;
+    char elestr[12];
 
     DBF_FIELD_t *p;
 
@@ -114,6 +115,7 @@ int main()
             printf("\n");
 
         if(elefield!=-1){
+            crow[elefield]=itoa(ele,elestr,10);
             crow[header->field_count]=ELEVATION;
 
             if(ele%Major_duration==0){
