@@ -69,6 +69,8 @@ int convert(FILE *src,FILE *dest,int Major_interval,int Medium_interval,int log)
         destHeader->fields[header->field_count+1].type='C';
         destHeader->fields[header->field_count+1].length=16;
     }
+    destHeader->meta.records = header->meta.records;
+    destHeader->meta.lastupdate = header->meta.lastupdate;
     fillHeader(destHeader);
     writeHeader(dest, destHeader);
 
