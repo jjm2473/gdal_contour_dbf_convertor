@@ -2,138 +2,75 @@
 * author:jjm2473
 * date:2016-4-18
 */
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
-#include "DBF.h"
-
-const char* CONTOUR="contour";
-const char* CONTOUR_EXT="contour_ex";
-const char* ELEVATION="elevation";
-const char* ELEVATION_MAJOR="elevation_major";
-const char* ELEVATION_MEDIUM="elevation_medium";
-const char* ELEVATION_MINOR="elevation_minor";
-
-int Major_duration=100;
-int Medium_duration=50;
-
-int main()
+#include "Convertor.h"
+void usage(char* prog){
+    printf("Convert gdal_contour generated dbf to JOSM import ready dbf.by jjm2473\n\n");
+    printf("Usage: %s [<options>] <srcfile> <destfile>\n", prog);
+    printf("The options are:\n"
+           "\t-l: print log\n"
+           "\t-i <Major> <Medium>: Contour level interval,default value is 100 50\n"
+           );
+}
+int main(int argc,char* argv[])
 {
-    int print_log=1;
-    char** row;
-    const char** crow;
+    int i;
+    int Major_interval=100,Medium_interval=50;
+    int print_log=0;
+    int print_help=0;
+    char *srcfile = NULL;
+    char *destfile = NULL;
 
-    int i,j;
-    float field_float;
-    int field_int;
-    int elefield,ele;
-    char elestr[12];
-
-    DBF_FIELD_t *p;
-
-    FILE* src = fopen("contour.dbf","rb");
-    FILE* dest = fopen("test.dbf","wb");
-    DBF_HEADER_t * header = readHeader(src);
-
-    elefield = -1;
-    for(i=0;i<header->field_count;++i){
-        p=header->fields+i;
-        if(!strncasecmp(p->name,"ELE",4)){
-            elefield=i;
-            break;
-        }
+    if(argc<3){
+        usage(argv[0]);
+        return -1;
     }
 
-    if(print_log){
-        for(i=0;i<header->field_count;++i){
-            p=header->fields+i;
-            printf("%s,%c,%d,%d\t",p->name,p->type,p->length,p->dec_count);
-        }
-        printf("\n");
-    }
-
-    DBF_HEADER_t * destHeader =
-        newHeader(elefield==-1?header->field_count:header->field_count+2);
-
-    for(i=0;i<header->field_count;++i){
-        destHeader->fields[i]=header->fields[i];
-    }
-    if(elefield != -1){
-        strncpy(destHeader->fields[elefield].name,"ele",3);
-        destHeader->fields[elefield].dec_count=0;
-        destHeader->fields[elefield].length=8;
-
-        strcpy(destHeader->fields[header->field_count].name, CONTOUR);
-        destHeader->fields[header->field_count].type='C';
-        destHeader->fields[header->field_count].length=9;
-
-        strcpy(destHeader->fields[header->field_count+1].name, CONTOUR_EXT);
-        destHeader->fields[header->field_count+1].type='C';
-        destHeader->fields[header->field_count+1].length=16;
-    }
-    fillHeader(destHeader);
-    writeHeader(dest, destHeader);
-
-    crow=(const char**)malloc(sizeof(const char*)*destHeader->field_count);
-
-    for(i=0;i<header->meta.records;++i){
-        row=readRow(src, header);
-
-        for(j=0;j<header->field_count;++j){
-            p=header->fields+j;
-
-            if(print_log)
-                printf("%s\t",row[j]);
-
-            crow[j]=row[j];
-
-            switch(p->type){
-            case 'C':
-
+    for(i=1;i<argc;++i){
+        if(argv[i][0]=='-'){
+            switch(argv[i][1]){
+            case 'l':
+                print_log=1;
                 break;
-            case 'N':
-                if(p->dec_count)
-                    field_float = atof(row[j]);
-                else
-                    field_int = atoi(row[j]);
-                if(elefield==j){
-                    if(p->dec_count)
-                        ele=field_float;
-                    else
-                        ele=field_int;
-                }
+            case '-':
+                if(argv[i][2]!='h')
+                    break;
+            case 'h':
+                print_help=1;
                 break;
-            case 'F':
-                field_float = atof(row[j]);
-
+            case 'i':
+                Major_interval = atoi(argv[++i]);
+                Medium_interval = atoi(argv[++i]);
+                break;
             }
-
-        }
-
-        if(print_log)
-            printf("\n");
-
-        if(elefield!=-1){
-            crow[elefield]=itoa(ele,elestr,10);
-            crow[header->field_count]=ELEVATION;
-
-            if(ele%Major_duration==0){
-                crow[header->field_count+1]=ELEVATION_MAJOR;
-            }else if(ele%Medium_duration==0){
-                crow[header->field_count+1]=ELEVATION_MEDIUM;
+        }else{
+            if(srcfile==NULL){
+                srcfile=argv[i];
             }else{
-                crow[header->field_count+1]=ELEVATION_MINOR;
+                destfile=argv[i];
             }
         }
-        writeRow(dest,destHeader,crow);
-
-        freeRow(row, header);
     }
-    free(crow);
-    free(destHeader);
-    free(header);
+    if(print_help){
+        usage(argv[0]);
+    }
+    if(destfile==NULL){
+        if(print_help){
+            return 0;
+        }else{
+            usage(argv[0]);
+            return -1;
+        }
+    }
+
+    FILE* src = fopen(srcfile,"rb");
+    FILE* dest = fopen(destfile,"wb");
+
+    convert(src,dest,Major_interval,Medium_interval,print_log);
+
     fclose(dest);
     fclose(src);
+
     return 0;
 }
